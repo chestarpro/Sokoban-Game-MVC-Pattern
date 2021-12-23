@@ -1,10 +1,10 @@
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 
-public class Controller implements KeyListener {
+public class KeyController implements KeyListener {
     private final Model model;
 
-    public Controller(Viewer viewer) {
+    public KeyController(Viewer viewer) {
         model = new Model(viewer);
     }
 
@@ -32,6 +32,7 @@ public class Controller implements KeyListener {
     public Model getModel() {
         return model;
     }
+
     @Override
     public void keyReleased(KeyEvent event) {}
     @Override

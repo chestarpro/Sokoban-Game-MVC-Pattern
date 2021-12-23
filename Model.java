@@ -1,79 +1,115 @@
+import java.io.File;
+
 public class Model {
     private final Viewer viewer;
     private int[][] desktop;
-    private int[][] goalsPosition;
-    private int[][] basicLevel;
+    private int[][] arrayIndexesGoal;
     private int indexX;
     private int indexY;
+    private int playerPosition;
     private final Levels levels;
+    private boolean isOk;
+    private final Sound boxInPositionSound;
+    private final Sound wonSound;
 
     public Model(Viewer viewer) {
         this.viewer = viewer;
+        boxInPositionSound = new Sound(new File("sound/point.wav"));
+        wonSound = new Sound(new File("sound/won.wav"));
+        isOk = true;
         levels = new Levels();
-        initialization();
+        playerPosition = 3;
     }
 
-    private void initialization() {
-        basicLevel = new int[][]{
-                {2, 2, 2, 2, 2},
-                {2, 0, 0, 0, 2},
-                {2, 0, 0, 0, 2, 2, 2},
-                {2, 3, 3, 3, 1, 0, 2},
-                {2, 4, 4, 4, 0, 0, 2},
-                {2, 2, 2, 2, 2, 2, 2}
-        };
-        desktop = basicLevel;
-        initializationPlayerPosition(desktop);
-        initializationGoalPosition(desktop);
-    }
+    public void doAction(String command) {
+        switch (command) {
+            case "Level1":
+                levels.setLevel(1);
 
-    private void nextLevel() {
-        try {
-            desktop = levels.nextLevel("levels/level3.sok");
-            for (int i = 0; i < desktop.length; i++) {
-                for (int j = 0; j < desktop[i].length; j++) {
-                    System.out.print(desktop[i][j] + " ");
-                }
-                System.out.println();
-            }
-        } catch (Exception e) {
-            initialization();
-            return;
+                break;
+            case "Level2":
+                levels.setLevel(2);
+
+                break;
+            case "Level3":
+                levels.setLevel(3);
+
+                break;
+            case "Level4":
+                levels.setLevel(4);
+
+                break;
+            case "Level5":
+                levels.setLevel(5);
+
+                break;
+            case "Level6":
+                levels.setLevel(6);
+
+                break;
+            case "Level7":
+                levels.setLevel(7);
+
+                break;
+            case "Level8":
+                levels.setLevel(8);
+
+                break;
+            case "Level9":
+                levels.setLevel(9);
+                break;
+            case "Restart":
+                levels.setLevel(levels.getLevel() - 1);
+                break;
+            case "Exit":
+                System.exit(0);
         }
 
-        viewer.isError(checkWall(desktop));
-        viewer.isError(checkPlayerCount(desktop));
-        viewer.isError(checkBoxAndGoalCount(desktop));
+        isOk = true;
+        initialization();
+        playerPosition = 3;
         viewer.update();
-        initializationPlayerPosition(desktop);
-        initializationGoalPosition(desktop);
     }
 
     public void move(String direction) {
         if (direction.equals("Up")) {
+            playerPosition = 1;
             moveUp();
         } else if (direction.equals("Right")) {
+            playerPosition = 2;
             moveRight();
         } else if (direction.equals("Down")) {
+            playerPosition = 3;
             moveDown();
         } else if (direction.equals("Left")) {
+            playerPosition = 4;
             moveLeft();
         } else {
             return;
         }
 
         checkGoal();
-
         viewer.update();
         won();
+    }
+
+    public void initialization() {
+        desktop = levels.nextLevel();
+
+        checkWall(desktop);
+        checkPlayerCount(desktop);
+        checkBoxAndGoalCount(desktop);
+
+        initializationPlayerPosition(desktop);
+        initializationGoalPosition(desktop);
     }
 
     private void checkGoal() {
         int x;
         int y;
-        for (int i = 0; i < goalsPosition.length; i++) {
-            x = goalsPosition[i][0];
-            y = goalsPosition[i][1];
+        for (int i = 0; i < arrayIndexesGoal.length; i++) {
+            x = arrayIndexesGoal[i][0];
+            y = arrayIndexesGoal[i][1];
             if (desktop[x][y] == 0) {
                 desktop[x][y] = 4;
                 break;
@@ -85,17 +121,20 @@ public class Model {
         boolean isWon = true;
         int x;
         int y;
-        for (int i = 0; i < goalsPosition.length; i++) {
-            x = goalsPosition[i][0];
-            y = goalsPosition[i][1];
+        for (int i = 0; i < arrayIndexesGoal.length; i++) {
+            x = arrayIndexesGoal[i][0];
+            y = arrayIndexesGoal[i][1];
             if (desktop[x][y] != 3) {
                 isWon = false;
                 break;
             }
         }
         if (isWon) {
+            boxInPositionSound.stop();
+            wonSound.play();
             if (viewer.showDialog()) {
-                nextLevel();
+                initialization();
+                playerPosition = 3;
                 viewer.update();
             }
         }
@@ -103,9 +142,14 @@ public class Model {
 
     private void moveUp() {
         if (desktop[indexX - 1][indexY] == 3) {
-            if (desktop[indexX - 2][indexY] == 0 || desktop[indexX - 2][indexY] == 4) {
+            if (desktop[indexX - 2][indexY] == 0) {
                 desktop[indexX - 1][indexY] = 0;
                 desktop[indexX - 2][indexY] = 3;
+
+            } else if (desktop[indexX - 2][indexY] == 4) {
+                desktop[indexX - 1][indexY] = 0;
+                desktop[indexX - 2][indexY] = 3;
+                boxInPositionSound.play();
             }
         }
 
@@ -118,11 +162,14 @@ public class Model {
 
     private void moveRight() {
         if (desktop[indexX][indexY + 1] == 3) {
-            if (desktop[indexX][indexY + 2] == 0 || desktop[indexX][indexY + 2] == 4) {
+            if (desktop[indexX][indexY + 2] == 0) {
                 desktop[indexX][indexY + 1] = 0;
                 desktop[indexX][indexY + 2] = 3;
+            } else if (desktop[indexX][indexY + 2] == 4) {
+                desktop[indexX][indexY + 1] = 0;
+                desktop[indexX][indexY + 2] = 3;
+                boxInPositionSound.play();
             }
-
         }
         if (desktop[indexX][indexY + 1] == 0 || desktop[indexX][indexY + 1] == 4) {
             desktop[indexX][indexY] = 0;
@@ -133,9 +180,13 @@ public class Model {
 
     private void moveDown() {
         if (desktop[indexX + 1][indexY] == 3) {
-            if (desktop[indexX + 2][indexY] == 0 || desktop[indexX + 2][indexY] == 4) {
+            if (desktop[indexX + 2][indexY] == 0) {
                 desktop[indexX + 1][indexY] = 0;
                 desktop[indexX + 2][indexY] = 3;
+            } else if (desktop[indexX + 2][indexY] == 4) {
+                desktop[indexX + 1][indexY] = 0;
+                desktop[indexX + 2][indexY] = 3;
+                boxInPositionSound.play();
             }
         }
 
@@ -148,9 +199,13 @@ public class Model {
 
     private void moveLeft() {
         if (desktop[indexX][indexY - 1] == 3) {
-            if (desktop[indexX][indexY - 2] == 0 || desktop[indexX][indexY - 2] == 4) {
+            if (desktop[indexX][indexY - 2] == 0) {
                 desktop[indexX][indexY - 1] = 0;
                 desktop[indexX][indexY - 2] = 3;
+            } else if (desktop[indexX][indexY - 2] == 4) {
+                desktop[indexX][indexY - 1] = 0;
+                desktop[indexX][indexY - 2] = 3;
+                boxInPositionSound.play();
             }
         }
 
@@ -159,10 +214,6 @@ public class Model {
             indexY = indexY - 1;
             desktop[indexX][indexY] = 1;
         }
-    }
-
-    public int[][] getDesktop() {
-        return desktop;
     }
 
     private void initializationGoalPosition(int[][] desktop) {
@@ -175,17 +226,13 @@ public class Model {
             }
         }
 
-        goalsPosition = new int[size][];
-        int[] temp;
+        arrayIndexesGoal = new int[size][];
         int index = 0;
         for (int i = 0; i < desktop.length; i++) {
             for (int j = 0; j < desktop[i].length; j++) {
                 if (desktop[i][j] == 4) {
-                    temp = new int[2];
-                    temp[0] = i;
-                    temp[1] = j;
-                    goalsPosition[index] = temp;
-                    index++;
+                    arrayIndexesGoal[index] = new int[]{i, j};
+                    index = index + 1;
                 }
             }
         }
@@ -204,20 +251,25 @@ public class Model {
         }
     }
 
-    private boolean checkPlayerCount(int[][] desktop) {
+    private void checkPlayerCount(int[][] desktop) {
         int count = 0;
         for (int i = 0; i < desktop.length; i++) {
             for (int j = 0; j < desktop[i].length; j++) {
                 if (desktop[i][j] == 1) {
                     count = count + 1;
                 }
-                if (count > 1) return false;
+                if (count > 1) {
+                    isOk = false;
+                    return;
+                }
             }
         }
-        return count == 1;
+        if (count == 0) {
+            isOk = false;
+        }
     }
 
-    private boolean checkBoxAndGoalCount(int[][] desktop) {
+    private void checkBoxAndGoalCount(int[][] desktop) {
         int countBox = 0;
         int countGoal = 0;
         for (int i = 0; i < desktop.length; i++) {
@@ -230,29 +282,53 @@ public class Model {
                 }
             }
         }
-        return countBox == countGoal;
+
+        if (countBox != countGoal) isOk = false;
+
+        if (countBox == 0 && countGoal == 0) isOk = false;
     }
 
-    private boolean checkWall(int[][] desktop) {
+    private void checkWall(int[][] desktop) {
         for (int i = 0; i < desktop.length; i++) {
-            for (int j = 0; j < desktop[i].length; j++) {
-                if (i == 0) {
-                    if (desktop[i][j] == 1 || desktop[i][j] == 3 || desktop[i][j] == 4) {
-                        return true;
-                    }
-                } else if (i < desktop.length - 1) {
-                    if (desktop[i][0] == 1 || desktop[i][0] == 3 || desktop[i][0] == 4 ||
-                            desktop[i][desktop[i].length - 1] == 1 || desktop[i][desktop[i].length - 1] == 3 ||
-                            desktop[i][desktop[i].length - 1] == 4) {
-                        return true;
-                    }
-                } else if (i == desktop.length - 1) {
-                    if (desktop[i][j] == 1 || desktop[i][j] == 3 || desktop[i][j] == 4) {
-                        return true;
-                    }
+            if (desktop[0][i] != 2) {
+                isOk = false;
+                return;
+            }
+            if (i > 0 && i < desktop.length - 1) {
+                if (desktop[i][desktop.length - 1] != 2) {
+                    isOk = false;
+                    return;
                 }
             }
+            if (desktop[desktop.length - 1][i] != 2) {
+                isOk = false;
+                return;
+            }
         }
-        return false;
+    }
+
+    public int[][] getDesktop() {
+        return desktop;
+    }
+
+    public boolean isErrorState() {
+        return !isOk;
+    }
+
+    public int getPlayerPosition() {
+        return playerPosition;
+    }
+
+    public void setVolume(float volume) {
+        wonSound.setVolume(volume);
+        boxInPositionSound.setVolume(volume);
+    }
+
+    public boolean isSelected() {
+        return viewer.getCheckBox().isSelected();
+    }
+
+    public int getCurrentLevel() {
+        return levels.getLevel() - 1;
     }
 }
